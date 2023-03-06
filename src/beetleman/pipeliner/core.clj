@@ -16,7 +16,6 @@
    :name    "Example step"
    :schema  default-schema})
 
-
 (def step-schema [:map
                   [:name :string]
                   [:handler fn?]
@@ -58,14 +57,8 @@
   clojure.lang.IDeref
   (execute-step [step-data step previous-step]
     (future
-      (println 1)
-      (let [xv (handle-step @step-data step previous-step)]
-        (println 2 xv)
-        xv)))
-  (await [step-data]
-    (println "await " step-data)
-    @step-data))
-
+      (handle-step @step-data step previous-step)))
+  (await [step-data] @step-data))
 
 (defn pipeline
   ([steps data]
@@ -73,17 +66,15 @@
   ([steps data ctx]
    (assert-schema! steps-schema steps "Steps validation" {})
    (-> (reduce (fn [{:keys [step-data previous-step]} step]
-                 (println step-data)
-                 {:step-data (execute-step step-data step previous-step)
+                 {:step-data     (execute-step step-data step previous-step)
                   :previous-step step})
-               {:step-data {:ctx  ctx
-                            :data data}
+               {:step-data     {:ctx  ctx
+                                :data data}
                 :previous-step nil}
                steps)
        :step-data
        await
        :data)))
-
 
 (comment
   (pipeline [example-step
